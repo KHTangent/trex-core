@@ -24,6 +24,7 @@ limitations under the License.
 
 #include "bp_sim.h"
 #include "utl_ip.h"
+#include <fstream>
 
 #define L_PKT_SUBMODE_NO_REPLY 1
 #define L_PKT_SUBMODE_REPLY 2
@@ -286,6 +287,7 @@ public:
      CRXCoreIgnoreStat m_ign_stats_prev;
      CJitter         m_jitter;
 	 CTimeHistogram  m_hist; /* all window */
+     std::ofstream*  m_timestamps_file;
 };
 
 

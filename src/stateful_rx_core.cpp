@@ -297,6 +297,16 @@ bool CCPortLatency::Create(uint8_t id,
         rx_port->set_dummy_port_in_pair();
     }
 
+    char filename[120];
+    time_t rawtime;
+    struct tm* timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(filename, sizeof(filename), "timestamps-%Y-%m-%dT%H:%M:%S-p", timeinfo);
+    strcat(filename, std::to_string(id).c_str());
+    m_timestamps_file = new std::ofstream();
+    m_timestamps_file->open(filename, std::ios::binary | std::ios::out);
+
     m_hist.Create();
     reset();
     m_tunnel_ctx = nullptr;
@@ -305,6 +315,8 @@ bool CCPortLatency::Create(uint8_t id,
 
 void CCPortLatency::Delete(){
     m_hist.Delete();
+    m_timestamps_file->close();
+    delete m_timestamps_file;
 }
 
 void CCPortLatency::update_packet(rte_mbuf_t * m, int port_id){
@@ -617,10 +629,14 @@ bool CCPortLatency::check_packet(rte_mbuf_t * m,CRx_check_header * & rx_p) {
         m_rx_seq++;
     }
     m_pkt_ok++;
-    uint64_t d = (os_get_hr_tick_64() - h->time_stamp );
+    auto current_time = os_get_hr_tick_64();
+    uint64_t d = (current_time - h->time_stamp );
     dsec_t ctime=ptime_convert_hr_dsec(d);
+    dsec_t stime = ptime_convert_hr_dsec(current_time);
     m_hist.Add(ctime);
     m_jitter.calc(ctime);
+    m_timestamps_file->write(reinterpret_cast<char*>(&stime), sizeof(double));
+    m_timestamps_file->write(reinterpret_cast<char*>(&ctime), sizeof(double));
     return (true);
 }
 
