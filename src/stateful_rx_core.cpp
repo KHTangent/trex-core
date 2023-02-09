@@ -632,11 +632,12 @@ bool CCPortLatency::check_packet(rte_mbuf_t * m,CRx_check_header * & rx_p) {
     auto current_time = os_get_hr_tick_64();
     uint64_t d = (current_time - h->time_stamp );
     dsec_t ctime=ptime_convert_hr_dsec(d);
-    dsec_t stime = ptime_convert_hr_dsec(current_time);
+    dsec_t transmit_time = ptime_convert_hr_dsec(h->time_stamp);
+    dsec_t arrival_time = ptime_convert_hr_dsec(current_time);
     m_hist.Add(ctime);
     m_jitter.calc(ctime);
-    m_timestamps_file->write(reinterpret_cast<char*>(&stime), sizeof(double));
-    m_timestamps_file->write(reinterpret_cast<char*>(&ctime), sizeof(double));
+    m_timestamps_file->write(reinterpret_cast<char*>(&transmit_time), sizeof(double));
+    m_timestamps_file->write(reinterpret_cast<char*>(&arrival_time), sizeof(double));
     return (true);
 }
 
