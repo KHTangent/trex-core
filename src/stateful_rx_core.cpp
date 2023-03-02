@@ -297,15 +297,18 @@ bool CCPortLatency::Create(uint8_t id,
         rx_port->set_dummy_port_in_pair();
     }
 
-    char filename[120];
-    time_t rawtime;
-    struct tm* timeinfo;
-    time(&rawtime);
-    timeinfo = localtime(&rawtime);
-    strftime(filename, sizeof(filename), "timestamps-%Y-%m-%dT%H:%M:%S-p", timeinfo);
-    strcat(filename, std::to_string(id).c_str());
-    m_timestamps_file = new std::ofstream();
-    m_timestamps_file->open(filename, std::ios::binary | std::ios::out);
+    if (id == 0) {
+        char filename[120];
+        time_t rawtime;
+        struct tm* timeinfo;
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        strftime(filename, sizeof(filename), "timestamps-%Y-%m-%dT%H:%M:%S-p", timeinfo);
+        strcat(filename, std::to_string(id).c_str());
+        strcat(filename, ".data");
+        m_timestamps_file = new std::ofstream();
+        m_timestamps_file->open(filename, std::ios::binary | std::ios::out);
+    }
 
     m_hist.Create();
     reset();
@@ -446,6 +449,10 @@ void CCPortLatency::DumpCounters(FILE *fd){
     fprintf(fd," -----------\n");
     m_hist.Dump(fd);
     fprintf(fd," %-40s : %lu \n","jitter", (ulong)get_jitter_usec());
+    for (auto e : m_all_latencies) {
+        m_timestamps_file->write(reinterpret_cast<char*>(&e[0]), sizeof(double));
+        m_timestamps_file->write(reinterpret_cast<char*>(&e[1]), sizeof(double));
+    }
 }
 
 bool CCPortLatency::dump_packet(rte_mbuf_t * m){
@@ -632,12 +639,13 @@ bool CCPortLatency::check_packet(rte_mbuf_t * m,CRx_check_header * & rx_p) {
     auto current_time = os_get_hr_tick_64();
     uint64_t d = (current_time - h->time_stamp );
     dsec_t ctime=ptime_convert_hr_dsec(d);
-    dsec_t transmit_time = ptime_convert_hr_dsec(h->time_stamp);
-    dsec_t arrival_time = ptime_convert_hr_dsec(current_time);
     m_hist.Add(ctime);
     m_jitter.calc(ctime);
-    m_timestamps_file->write(reinterpret_cast<char*>(&transmit_time), sizeof(double));
-    m_timestamps_file->write(reinterpret_cast<char*>(&arrival_time), sizeof(double));
+    if (m_id == 0) {
+        dsec_t transmit_time = ptime_convert_hr_dsec(h->time_stamp);
+        dsec_t arrival_time = ptime_convert_hr_dsec(current_time);
+        m_all_latencies.push_back({transmit_time, arrival_time});
+    }
     return (true);
 }
 

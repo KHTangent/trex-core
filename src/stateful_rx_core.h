@@ -25,6 +25,8 @@ limitations under the License.
 #include "bp_sim.h"
 #include "utl_ip.h"
 #include <fstream>
+#include <array>
+#include <list>
 
 #define L_PKT_SUBMODE_NO_REPLY 1
 #define L_PKT_SUBMODE_REPLY 2
@@ -288,6 +290,7 @@ public:
      CJitter         m_jitter;
 	 CTimeHistogram  m_hist; /* all window */
      std::ofstream*  m_timestamps_file;
+     std::list<std::array<double, 2>> m_all_latencies;
 };
 
 
