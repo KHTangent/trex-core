@@ -27,6 +27,9 @@ limitations under the License.
 #include "time_histogram.h"
 #include "utl_jitter.h"
 
+#include <array>
+#include <fstream>
+#include <list>
                                  
 
 typedef enum {
@@ -382,6 +385,7 @@ public:
     void DumpShort(FILE *fd);
     void DumpTemplate(FILE *fd,bool verbose);
     void DumpTemplateFull(FILE *fd);
+    void DumpLatenciesFile();
 
     uint32_t getTemplateMaxJitter();
 
@@ -422,7 +426,9 @@ public:
     bool                           m_on_drain;
 public:
     dsec_t                         m_cur_time;
-
+private:
+    std::list<std::array<double, 2>> m_latencies;
+    std::ofstream *m_timestamps_file;
 };
 
 

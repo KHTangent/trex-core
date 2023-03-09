@@ -443,6 +443,7 @@ public:
     void dump_json(std::string & json ); // dump to json
     void dump_json_v2(std::string & json );
     void DumpRxCheckVerification(FILE *fd,uint64_t total_tx_rx_check);
+    void DumpLatenciesFile();
     void set_mask(uint32_t mask){
         m_port_mask=mask;
     }

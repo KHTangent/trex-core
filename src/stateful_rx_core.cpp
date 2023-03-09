@@ -1172,6 +1172,10 @@ void CLatencyManager::DumpRxCheck(FILE *fd){
     }
 }
 
+void CLatencyManager::DumpLatenciesFile() {
+    m_rx_check_manager.DumpLatenciesFile();
+}
+
 void CLatencyManager::DumpShortRxCheck(FILE *fd){
     if ( get_is_rx_check_mode() ) {
         m_rx_check_manager.DumpShort(fd);

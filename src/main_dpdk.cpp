@@ -5411,6 +5411,9 @@ COLD_FUNC int CGlobalTRex::stop_master(){
         m_mg.DumpRxCheck(stdout);
         m_mg.DumpRxCheckVerification(stdout,total_tx_rx_check);
     }
+    if ( get_is_rx_check_mode() ) {
+        m_mg.DumpLatenciesFile();
+    }
 
     dump_stats(stdout,CGlobalStats::dmpSTANDARD);
     dump_post_test_stats(stdout);

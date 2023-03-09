@@ -249,6 +249,15 @@ bool RxCheckManager::Create(){
     for (i=0; i<MAX_TEMPLATES_STATS;i++ ) {
         m_template_info[i].reset();
     }
+    char filename[120];
+    time_t rawtime;
+    struct tm* timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(filename, sizeof(filename), "timestamps-%Y-%m-%dT%H:%M:%S", timeinfo);
+    strcat(filename, ".data");
+    m_timestamps_file = new std::ofstream();
+    m_timestamps_file->open(filename, std::ios::binary | std::ios::out);
 	return (true);
 
 }
@@ -272,9 +281,13 @@ void RxCheckManager::handle_packet(CRx_check_header * rxh){
 
     m_cur_time=now_sec();
 
-    uint64_t d = (os_get_hr_tick_32() - rxh->m_time_stamp );
+	auto current_time = os_get_hr_tick_32();
+    uint64_t d = (current_time - rxh->m_time_stamp );
     double dt= ptime_convert_hr_dsec(d);
     m_hist.Add(dt);
+    auto transmit_time = ptime_convert_hr_dsec(current_time - d);
+    auto arrival_time = ptime_convert_hr_dsec(current_time);
+    m_latencies.push_back({transmit_time, arrival_time});
     // calc jitter per template 
     CPerTemplateInfo *lpt= get_template(rxh->m_template_id);
     lpt->calc(dt);
@@ -430,6 +443,8 @@ bool RxCheckManager::on_flow_end(CRxCheckFlow * lp){
 void RxCheckManager::Delete(){
     m_ft.Delete();
     m_hist.Delete();
+    m_timestamps_file->close();
+    delete m_timestamps_file;
 }
 
 void  flow_aging_callback(CFlowTimerHandle * t){
@@ -537,6 +552,13 @@ void RxCheckManager::Dump(FILE *fd){
     DumpTemplateFull(fd);
     fprintf(fd," ager :\n");
     m_tw.Dump(fd);
+}
+
+void RxCheckManager::DumpLatenciesFile() {
+    for (auto e : m_latencies) {
+        m_timestamps_file->write(reinterpret_cast<char*>(&e[0]), sizeof(double));
+        m_timestamps_file->write(reinterpret_cast<char*>(&e[1]), sizeof(double));
+    }
 }
 
 void RxCheckManager::dump_json(std::string & json){
