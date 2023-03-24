@@ -25,8 +25,6 @@ limitations under the License.
 #include "bp_sim.h"
 #include "utl_ip.h"
 #include <fstream>
-#include <array>
-#include <list>
 
 #define L_PKT_SUBMODE_NO_REPLY 1
 #define L_PKT_SUBMODE_REPLY 2
@@ -126,6 +124,8 @@ struct  latency_header {
         return( magic & 0xff);
     }
 };
+
+#define LATENCY_SAMPLE_BUFFER_SIZE 32
 
 class CLatencyManager ;
 class CRxAstfCore;
@@ -242,7 +242,7 @@ public:
 
 private:
     std::string get_field(std::string name,float f);
-
+    void add_latency_sample(double transmit, double arrival);
 
 private:
      CLatencyPktMode * m_pkt_mode;
@@ -290,7 +290,8 @@ public:
      CJitter         m_jitter;
 	 CTimeHistogram  m_hist; /* all window */
      std::ofstream*  m_timestamps_file;
-     std::list<std::array<double, 2>> m_all_latencies;
+     double m_latency_sample_buffer[LATENCY_SAMPLE_BUFFER_SIZE];
+     int            m_latency_sample_buffer_index;
 };
 
 

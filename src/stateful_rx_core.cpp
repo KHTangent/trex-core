@@ -298,6 +298,7 @@ bool CCPortLatency::Create(uint8_t id,
     }
 
     if (id == 0) {
+        m_latency_sample_buffer_index = 0;
         char filename[120];
         time_t rawtime;
         struct tm* timeinfo;
@@ -449,9 +450,11 @@ void CCPortLatency::DumpCounters(FILE *fd){
     fprintf(fd," -----------\n");
     m_hist.Dump(fd);
     fprintf(fd," %-40s : %lu \n","jitter", (ulong)get_jitter_usec());
-    for (auto e : m_all_latencies) {
-        m_timestamps_file->write(reinterpret_cast<char*>(&e[0]), sizeof(double));
-        m_timestamps_file->write(reinterpret_cast<char*>(&e[1]), sizeof(double));
+    if (m_latency_sample_buffer_index > 0) {
+        m_timestamps_file->write(
+            reinterpret_cast<char*>(m_latency_sample_buffer), 
+            sizeof(double) * m_latency_sample_buffer_index
+        );
     }
 }
 
@@ -644,9 +647,22 @@ bool CCPortLatency::check_packet(rte_mbuf_t * m,CRx_check_header * & rx_p) {
     if (m_id == 0) {
         dsec_t transmit_time = ptime_convert_hr_dsec(h->time_stamp);
         dsec_t arrival_time = ptime_convert_hr_dsec(current_time);
-        m_all_latencies.push_back({transmit_time, arrival_time});
+        add_latency_sample(transmit_time, arrival_time);
     }
     return (true);
+}
+
+void CCPortLatency::add_latency_sample(double transmit, double arrival) {
+    m_latency_sample_buffer[m_latency_sample_buffer_index] = transmit;
+    m_latency_sample_buffer[m_latency_sample_buffer_index+1] = arrival;
+    m_latency_sample_buffer_index += 2;
+    if (m_latency_sample_buffer_index >= LATENCY_SAMPLE_BUFFER_SIZE) {
+        m_timestamps_file->write(
+            reinterpret_cast<char*>(m_latency_sample_buffer), 
+            sizeof(double) * LATENCY_SAMPLE_BUFFER_SIZE
+        );
+        m_latency_sample_buffer_index = 0;
+    }
 }
 
 void CLatencyManager::Delete(){
