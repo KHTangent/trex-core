@@ -1,3 +1,11 @@
+== TRex fork with individual latency packet export
+
+This fork has been modified to dump timestamps for all latency packets while running with latency packets 
+enabled. It is otherwise unchanged.
+This was part of my master's thesis, and includes a guide here: [KHTangent/thesis-subprojects](https://github.com/KHTangent/thesis-subprojects/blob/master/testbed-docs/README.md)
+
+The original README is preserved below.
+
 
 == TRex Low-Cost, High-Speed Stateful Traffic Generator
 
